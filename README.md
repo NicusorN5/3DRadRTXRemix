@@ -21,15 +21,15 @@ After a build you have one proxy DLL: `d3d9.dll`.
 | `C:\3DRadRTX\d3d9.dll` | The editor (`3DRad.exe`) |
 | `C:\3DRadRTX\3DRad_res\compiledProject\<your-game>\d3d9.dll` | That compiled game (each build has its own folder) |
 
-Keep `d3d9_remix.dll` (Remix itself) and `remix-comp-proxy.ini` next to the proxy. Graphics settings live in that same folder as `rtx.conf` and `user.conf` — your user file wins if both exist.
+Keep `d3d9_remix.dll` (Remix from update function) and `remix-comp-proxy.ini` next to the proxy. Graphics settings live in that same folder as `rtx.conf` and `user.conf` — your user file wins if both exist.
 
-Example: you compile a project named *scary*. Copy the proxy into `compiledProject\scary_20260918113742\` as well as into `C:\3DRadRTX\`. Restart the editor or the compiled exe after you replace the DLL.
+Example: you compile a project named *scary*. It copies the proxy and remix files into `compiledProject\scary_20260918113742\`
 
 ### Editor, compiled game, compiler
 
 **Editor** — Run `3DRad.exe`. A launcher lets you pick Remix graphics. The 3D view then runs through Remix. Help → **3D Rad Help Files** opens `3DRad_res\help\` in your browser; **RTX Remix documentation** opens NVIDIA’s docs.
 
-**Compiled game** — Run the exe in a `compiledProject` folder. You get 3D Rad’s Display Options first (resolution, and the same Remix graphics lists as the launcher). After OK, the game starts and Remix comes up once the real play camera is there.
+**Compiled game** — Run the exe. You get 3D Rad’s Display Options first (resolution, and the same Remix graphics lists as the launcher). After OK, the game starts and Remix comes up once the real play camera is there.
 
 **Compiler** (`3DRad_compiler.exe`) — Builds the game only. It does not load Remix.
 
@@ -43,7 +43,7 @@ Lights, particle systems, and Fog objects in the scene are forwarded the same wa
 
 Launcher (editor) and Display Options (compiled) both edit Remix’s User Graphics Settings — presets like Ultra / High / Medium / Low / Custom — and save them locally.
 
-In a Remix session, press **F4** for the ImGui overlay: draw stats, FFP on/off, matrix/texture views, and tracer controls. Timed dumps go to `rtx_comp\diagnostics.log`.
+In a Remix session, press **F4** for the ImGui overlay: draw stats, FFP on/off, matrix/texture views, and tracer controls. Timed dumps go to `rtx_comp\diagnostics.log`. Press **ALT + X** for Remix settings.
 
 ### Other toolkit pieces
 
