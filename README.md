@@ -2,42 +2,58 @@
 
 A DX9 proxy framework for RTX Remix compatibility mods, with built-in fixed-function pipeline (FFP) conversion. Part of the [Vibe Reverse Engineering](https://github.com/Ekozmaster/Vibe-Reverse-Engineering) toolkit.
 
-This tree is the **3D Rad 7.22 (3Impact)** port. The install lives at `C:\3DRadRTX`. The proxy is `d3d9.dll`; RTX Remix is `d3d9_remix.dll`. Never replace the proxy with DXVK as `d3d9.dll`.
+This folder is the **3D Rad 7.22** port (the 3Impact engine). A typical install is `C:\3DRadRTX`.
 
 ## What It Does
 
-Legacy DX9 games use vertex/pixel shaders that RTX Remix can't inject ray-traced lighting into. This proxy sits between 3D Rad and Remix, intercepting D3D9 calls and converting shader-based rendering to fixed-function pipeline calls that Remix understands.
+3D Rad draws with old Direct3D 9 shaders. RTX Remix cannot put ray-traced lighting into those shaders, so this proxy sits in the middle: it presents itself as `d3d9.dll`, turns the game’s draws into the fixed-function pipeline Remix understands, and hands the real Remix runtime a second DLL named `d3d9_remix.dll`.
 
-It also captures 3Impact cameras, ParticleSystemEXT particles, PointLights, and Fog v1.03 so Remix sees the same scene the engine is drawing.
+On top of that conversion, it reads the live scene so Remix tracks the same camera, lights, particles, and fog that 3D Rad is using.
 
-### Hosts
+## Core functionality
 
-| Host | Remix |
-|------|--------|
-| `3DRad.exe` editor | Launcher, then Remix in the 3D view. Help → **3D Rad Help Files** (`file:///` `3DRad_res/help/`) and **RTX Remix documentation**. |
-| Compiled player (`3drad_player` copy) | Native Display Options first. Remix loads on the first real play `CreateDevice` after OK, once a scene camera exists — not on the loading-screen camera. |
-| `3DRad_compiler.exe` | Skip Remix and DXVK. System `d3d9` only. |
+### What you copy where
 
-Launcher and Display Options load **Remix User Graphics Settings** from the **local** folder: `rtx.conf` then `user.conf` (user wins). Saves upsert the same keys; they do not rewrite the whole conf and they keep `rtx.sceneScale`.
+After a build you have one proxy DLL: `d3d9.dll`.
 
-### Core Features
+| Put a copy here | Used by |
+|-----------------|--------|
+| `C:\3DRadRTX\d3d9.dll` | The editor (`3DRad.exe`) |
+| `C:\3DRadRTX\3DRad_res\compiledProject\<your-game>\d3d9.dll` | That compiled game (each build has its own folder) |
 
-- **Full D3D9 proxy** — `d3d9.dll` with every `IDirect3DDevice9` method intercepted; Remix remains `d3d9_remix.dll`
-- **FFP conversion** — captures VS constants, parses vertex declarations, transposes matrices, and routes draw calls through the D3D9 fixed-function pipeline
-- **Draw routing** — configurable decision trees that classify each draw call (3D geometry, HUD, skinned mesh) and decide whether to convert or pass through
-- **Camera detection** — walks **all** `CamChase` / `Cam1StPerson` / `Camera` instances each frame (plugin-pointer identity, host-row ObjectId like Particles — never slot index). Picks the engine realtime Rendering flag (`camera+0x124 == 0`). If several are on, picks the one driving the main viewport. LookAtLH eye is `0,0,0`; View is `VP * inv(P)`; world eye is `C` at `+0x50`, FOV at `+0x78`. Project switch/reload drops the set and rediscovers. No identity View/P after Present, no `enable_constant_world`, no `draws>=160` gate
-- **Particles** — ParticleSystemEXT (`sType` 25), ObjectId bind, `{stem}.ini` from editor `3DRad_res\projects` or compiled `<exe>\3DRad_res\projects`. Skip empty overwrite. File-Open wins autoload; same-stem reload does not prune-all
-- **PointLight** — D3D9 `SetLight` only (no Remix `CreateLight` / `DrawLightInstance`)
-- **Fog v1.03** — Remix fog-remap via `SetConfigVariable` (`rtx.volumetrics.enableFogRemap`). Same project-load drop as Particles. Do not rewrite whole `rtx.conf`; keep `sceneScale`
-- **Integrated frame tracer** — captures D3D9 API calls to JSONL with category filtering, delayed capture, and external trigger support
-- **INI configuration** — register layouts, albedo stage, skinning toggle, and diagnostics in `remix-comp-proxy.ini` (no recompile needed)
-- **ImGui debug overlay** (F4) — live VS constant heatmap, matrix viewer, texture stage bindings, draw stats, FFP enable/disable toggle, tracer controls
-- **Diagnostic logging** — timed frame dump to `rtx_comp\diagnostics.log`
-- **Optional skinning module** — runtime-toggled vertex skinning with bone matrix upload, vertex buffer expansion, and compressed format decoding
-- **DLL chain loading** — pre-load and post-load DLL/ASI injection for additional mods
-- **Component module system** — `shared/` (game-agnostic static lib) + `comp/` (3D Rad DLL)
+Keep `d3d9_remix.dll` (Remix itself) and `remix-comp-proxy.ini` next to the proxy. Graphics settings live in that same folder as `rtx.conf` and `user.conf` — your user file wins if both exist.
 
-### Architecture
+Example: you compile a project named *scary*. Copy the proxy into `compiledProject\scary_20260918113742\` as well as into `C:\3DRadRTX\`. Restart the editor or the compiled exe after you replace the DLL.
+
+### Editor, compiled game, compiler
+
+**Editor** — Run `3DRad.exe`. A launcher lets you pick Remix graphics. The 3D view then runs through Remix. Help → **3D Rad Help Files** opens `3DRad_res\help\` in your browser; **RTX Remix documentation** opens NVIDIA’s docs.
+
+**Compiled game** — Run the exe in a `compiledProject` folder. You get 3D Rad’s Display Options first (resolution, and the same Remix graphics lists as the launcher). After OK, the game starts and Remix comes up once the real play camera is there.
+
+**Compiler** (`3DRad_compiler.exe`) — Builds the game only. It does not load Remix.
+
+### What Remix sees from the scene
+
+A project can have many cameras (several chase cams, first-person cams, and others). The proxy finds all of them and follows whichever one is actually rendering the main view. Open a different project, or reload the same one, and it starts that search over.
+
+Lights, particle systems, and Fog objects in the scene are forwarded the same way, so a PointLight, a ParticleSystem, or Fog in the editor list shows up in Remix. Per-object particle settings are stored in a `{project}.ini` next to the project: editor installs use `C:\3DRadRTX\3DRad_res\projects\`, compiled games use `<that-exe>\3DRad_res\projects\`.
+
+### Graphics and the F4 overlay
+
+Launcher (editor) and Display Options (compiled) both edit Remix’s User Graphics Settings — presets like Ultra / High / Medium / Low / Custom — and save them locally.
+
+In a Remix session, press **F4** for the ImGui overlay: draw stats, FFP on/off, matrix/texture views, and tracer controls. Timed dumps go to `rtx_comp\diagnostics.log`.
+
+### Other toolkit pieces
+
+- **Draw routing** — 3D meshes go through FFP; HUD and similar draws can pass through
+- **Frame tracer** — optional JSONL capture of D3D9 calls
+- **`remix-comp-proxy.ini`** — register layouts, albedo stage, skinning, diagnostics (no recompile)
+- **Skinning module** — optional bone-matrix path for skinned meshes
+- **DLL chain** — extra DLL/ASI mods can load before or after the proxy
+
+## Architecture
 
 ```
 src/
@@ -45,52 +61,49 @@ src/
     common/
       config.hpp/cpp     INI config reader
       ffp_state.hpp/cpp  FFP state tracking, transforms, lighting, texture stages
-      remix_api.hpp/cpp  Remix Bridge (InitializeLibrary after a real scene camera)
+      remix_api.hpp/cpp  Remix Bridge
       ...
     utils/               Hooking, memory, general utilities
   comp/                3D Rad 7.22 (this tree)
-    main.cpp             DLL entry, host_kind (editor / compiled_player / compiler)
-    d3d9_proxy.cpp       d3d9.dll export forwarding → d3d9_remix.dll (not DXVK as d3d9.dll)
-    project_file.cpp     File-Open / reload; drops particles, fog, cameras
-    display_options.cpp  Compiled Display Options; local rtx.conf + user.conf
+    main.cpp             DLL entry; editor vs compiled vs compiler
+    d3d9_proxy.cpp       Forwards to d3d9_remix.dll
+    project_file.cpp     Project open / reload
+    display_options.cpp  Compiled Display Options
     launch_dialog.cpp    Editor launcher graphics
-    editor_frame.cpp     Help Files + RTX Remix documentation
-    remix_graphics.cpp   user.conf overlays rtx.conf; upsert-only saves
-    compiler_inject.cpp  Copy remix files into compiledProject; compiler skip Remix
+    editor_frame.cpp     Help menu
+    remix_graphics.cpp   rtx.conf + user.conf
+    compiler_inject.cpp  Copies remix files into a compiled build
     game/
-      camera.cpp         Multi-camera detection, Rendering flag, View/FOV
-      particles.cpp      ParticleSystemEXT + ObjectId INI
-      lights.cpp         PointLight SetLight-only
-      fog.cpp            Fog v1.03 → fog-remap SetConfigVariable
+      camera.cpp         Scene cameras
+      particles.cpp      Particle systems
+      lights.cpp         Point lights
+      fog.cpp            Fog
     modules/
-      d3d9ex.cpp         D3D9 proxy with FFP + tracer interceptions
-      renderer.cpp       Draw routing decision trees
-      imgui.cpp          Debug overlay (F4) with FFP tab
-      tracer.cpp         Integrated frame tracer
+      d3d9ex.cpp         D3D9 proxy with FFP + tracer
+      renderer.cpp       Draw routing
+      imgui.cpp          F4 overlay
+      tracer.cpp         Frame tracer
       diagnostics.cpp    Frame logging
       skinning.cpp       Optional skinning
 ```
 
 ## Building
 
-Build from this folder (`patches/3DRad`), not the `rtx_remix_tools` template:
+From this folder (`patches/3DRad`):
 
 ```bat
 cd patches\3DRad
 build.bat release
 ```
 
-Requires Visual Studio 2022 (x86 toolset). Output: `build/bin/release/d3d9.dll`. If `C:\3DRadRTX\` exists, `build.bat` also copies that DLL to `C:\3DRadRTX\d3d9.dll`.
+Requires Visual Studio 2022 (x86 toolset). Output: `build/bin/release/d3d9.dll`. If `C:\3DRadRTX\` exists, the script also copies the DLL there. Compiled games still need their own copy (see above).
 
 ## Deploying
 
-1. Copy `d3d9.dll` to `C:\3DRadRTX\` (editor / launcher).
-2. Copy the same `d3d9.dll` into **each** `C:\3DRadRTX\3DRad_res\compiledProject\<build>\` folder. Conf, `.ini`, Remix, and `.trex` stay local to that compile.
-3. Keep `remix-comp-proxy.ini` next to the host. Edit it for FFP / tracer / diagnostics; do not use it to swap in DXVK as `d3d9.dll`.
-4. RTX Remix stays `d3d9_remix.dll` in the same folder as the proxy.
-5. Do not wholesale-rewrite `rtx.conf` / `user.conf`. Upsert keys only. Keep `rtx.sceneScale`.
-
-Restart `3DRad.exe` or the compiled player after replacing `d3d9.dll`.
+1. Copy `d3d9.dll` to `C:\3DRadRTX\` for the editor.
+2. Copy the same file into each `compiledProject\<your-game>\` folder.
+3. Leave `d3d9_remix.dll` and `remix-comp-proxy.ini` beside the proxy.
+4. Restart `3DRad.exe` or the compiled exe.
 
 ## Contributors
 
