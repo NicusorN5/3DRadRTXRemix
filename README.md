@@ -102,10 +102,9 @@ Requires Visual Studio 2022 (x86 toolset). Output: `build/bin/release/d3d9.dll`.
 
 ## Deploying
 
-1. Copy `d3d9.dll` to `C:\3DRadRTX\` for the editor.
-2. Copy the same file into each `compiledProject\<your-game>\` folder.
-3. Leave `d3d9_remix.dll` and `remix-comp-proxy.ini` beside the proxy.
-4. Restart `3DRad.exe` or the compiled exe.
+1. Unzip the files to `C:\3DRadRTX\` for the editor.
+2. Start `3DRad.exe` to start the proxy and press update to download the RTX Remix and DXVK runtimes
+3. Install RTX Remix via the NVIDIA App for additional modding features
 
 ## Contributors
 
