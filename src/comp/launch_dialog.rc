@@ -1,0 +1,25 @@
+#include <windows.h>
+#include "resource.h"
+
+2 24 "launch_dialog.manifest"
+
+IDD_LAUNCH_EDITOR DIALOGEX 0, 0, 520, 228
+STYLE DS_SETFONT | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_CLIPCHILDREN
+CAPTION "3D Rad RTX - launch editor"
+FONT 9, "Segoe UI"
+BEGIN
+    LTEXT           "Choose a backend, then Launch. Graphics settings apply to rtx.conf / user.conf before Remix starts.",
+                    -1, 10, 6, 500, 16
+    AUTORADIOBUTTON "RTX Remix  -  path-traced editor (d3d9_remix.dll bridge)",
+                    IDC_LAUNCH_REMIX, 12, 26, 496, 14, WS_GROUP | WS_TABSTOP
+    AUTORADIOBUTTON "Base DX9  -  stock Direct3D9, no Remix / DXVK / FFP",
+                    IDC_LAUNCH_DX9, 12, 42, 496, 14
+    AUTORADIOBUTTON "DXVK  -  vanilla Vulkan translation (d3d9_dxvk.dll)",
+                    IDC_LAUNCH_DXVK, 12, 58, 496, 14
+    LTEXT           "", IDC_LAUNCH_LINKS, 10, 76, 500, 14, SS_LEFT | SS_NOPREFIX
+    LTEXT           "", IDC_LAUNCH_STATUS, 10, 92, 500, 18, SS_LEFT | SS_NOPREFIX
+    DEFPUSHBUTTON   "Launch", IDC_LAUNCH_GO, 10, 114, 60, 14
+    PUSHBUTTON      "Save", IDC_LAUNCH_SAVE, 76, 114, 60, 14
+    PUSHBUTTON      "Update", IDC_LAUNCH_UPDATE, 142, 114, 60, 14
+    PUSHBUTTON      "Cancel", IDCANCEL, 450, 114, 60, 14
+END
