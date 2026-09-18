@@ -2,6 +2,8 @@
 
 A DX9 proxy framework for RTX Remix compatibility mods, with built-in fixed-function pipeline (FFP) conversion. Part of the [Vibe Reverse Engineering](https://github.com/Ekozmaster/Vibe-Reverse-Engineering) toolkit.
 
+[![Watch the video](https://img.youtube.com/vi/GXJ3-TsTYsg/maxresdefault.jpg)](https://youtu.be/GXJ3-TsTYsg)
+
 This folder is the **3D Rad 7.22** port (the 3Impact engine). A typical install is `C:\3DRadRTX`.
 
 ## What It Does
